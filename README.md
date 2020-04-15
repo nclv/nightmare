@@ -1,5 +1,12 @@
 from https://guyinatuxedo.github.io/
 
+# Rappels
+
+Chaque caractère hexadécimal représente 4 bits.
+2 caractères hexadécimaux représentent 8 bits ou 1 octet ou encore un byte.
+
+Least Endian : `0xcaf3baee` devient `0xee 0xba 0xf3 0xca`
+
 # Tools
 
 ## `objdump`
@@ -57,6 +64,8 @@ For instance with the line `$esp   : 0xffffd010  →  0x080484b0  →  "hello wo
 
 `j *0x40117d` to jump directly to an instruction like `0x40117d`, and skip all instructions in between
 
+`search-pattern pattern` to find a pattern in memory
+
 ## `pwntools`
 
 See `pwn_usage_.py`
@@ -68,6 +77,15 @@ Done :
 - `beleaf` : application d'une fonction sur chaque caractère de l'entrée, comparaison de sa sortie avec un byte d'un array `desiredOutput`, la fonction renvoie l'index du caractère dans l'array `lookup`. On prend à la suite les bytes de `desiredOutput` (qui doivent être égaux à l'index précedent pour constituder le bon mdp), puis on applique `(startaddresslookup + 4 * byte) = addresslookup` (l'adresse contenant la valeur du caractère recherché). Cela nous donne chaque caractère.
 - `helithumper_re` : on check chaque caractère pour vérifier que c'est la bon avec un tableau dont les 4 premiers éléments sont initialisés (valeurs hexadécimales à convertir en ascii, fonction `chr` en python), la suite des éléments est initialisée manuellement dans des variables stockées à la suite du tableau dans le stack. On n'a pas d'erreur concernant l'indice auquel l'on souhaite accéder dans le tableau lorsque cet indice est plus grand que la taille du tableau. On itère alors sur la suite des valeurs du stack.
 - `strings` : il suffit d'utiliser l'outils `strings`
+- `boi` : 64 bit binary with a Stack Canary and Non-Executable stack, there is a `read()` function which will give us a way to overflow the stack with our own values. Regarder ce que contient le stack du main et calculer l'écart entre les addresses, on compare les valeurs 0xdeadbeef et 0xcaf3baee et on pop un shell si elles sont identiques. Passer à gdb pour observer la mémoire juste après l'appel au read (`b *0x4006a5`). 
+  Use `search-pattern 15935728` with 15935728 our input. Then we saw `0x00007fffffffde20│+0x0010: "15935728\n"         ← $rsi` so with `x/10gx $rsi` we can see what contains the addresses after `0x00007fffffffde20` :
+  ```
+  0x7fffffffde20: 0x3832373533393531      0x000000000000000a
+  0x7fffffffde30: 0xdeadbeef00000000      0x0000000000000000
+  ```
+  On compte le nombre de bytes à overflow : 16 + 4 (avec les 4 zéros devant `deadbeef`) ie. 0x14 bytes. So we give the input 00000000000000000000 + p32(0xcaf3baee). We need the hex address to be in **least endian** (least significant byte first) because that is how the elf will read in data, so we have to pack it that way in order for the binary to read it properly.
+
+
 
 Whenever you xor something by itself the result is 0.
 
