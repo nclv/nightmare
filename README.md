@@ -1,4 +1,4 @@
-from https://guyinatuxedo.github.io/
+Les sources du projet sont [ici](https://guyinatuxedo.github.io/).
 
 # Rappels
 
